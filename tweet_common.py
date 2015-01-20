@@ -2,13 +2,13 @@ import os
 import urlparse
 import zipfile
 import json
-import datetime
+from datetime import datetime, date
 
 
 def url_fix(url):
     '''basic url normalization, removes query parameters'''
     parts = urlparse.urlparse(url)
-    return parts.scheme + parts.netloc + parts.path
+    return parts.netloc + parts.path
 
 
 def read_tweet_file(filepath):
@@ -74,17 +74,21 @@ def tweets_remove_fields(tweets, allowed=[u'id_str', u'text', u'created_at']):
 
 
 def tweet_day(tweet):
-    return datetime.datetime.strptime((tweet["created_at"]).strip('"'),
-                                      "%a %b %d %H:%M:%S +0000 %Y").date()
+    return datetime.strptime((tweet["created_at"]).strip('"'),
+                             "%a %b %d %H:%M:%S +0000 %Y").date()
 
 
 def tweet_archive_min_date(dirpath='../tweets'):
-    min_date = datetime.date.today()
+    min_date = date.today()
 
-    for tweets in read_tweets_from_dir(dirpath='../tweets'):
+    for tweets in read_tweets_from_dir_gen(dirpath='../tweets'):
         for tweet in tweets:
-            tday = tweet_day(tweet)
-            if tday < min_date:
-                min_date = tday
+            if 'created_at' in tweet:
+                try:
+                    tday = tweet_day(tweet)
+                except:
+                    continue
+                if tday < min_date:
+                    min_date = tday
 
     return min_date

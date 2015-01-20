@@ -1,12 +1,12 @@
 import rocksdb
-from datetime import datetime, date, timedelta
+from datetime import date, timedelta
 from tweet_common import tweet_archive_min_date
 from er_common import er_get_urls
 
 
 DBFILENAME = 'er.db'
 ARCHIVEDIR = '../tweets'
-FETCH_DAYS_BEFORE = 3
+FETCH_DAYS_BEFORE = 1
 
 
 def db_open(dbfile=DBFILENAME, create=False, bulk=False):
@@ -19,9 +19,8 @@ def db_open(dbfile=DBFILENAME, create=False, bulk=False):
     opts.write_buffer_size = 67108864  # 64MB
     opts.max_write_buffer_number = 2
     opts.target_file_size_base = 67108864  # 64MB
-    opts.filter_policy = rocksdb.BloomFilterPolicy(10)
-    opts.block_cache = rocksdb.LRUCache(1 * (1024 ** 3))  # 1GB
-    opts.block_cache_compressed = rocksdb.LRUCache(256 * (1024 ** 2))  # 256MB
+    #opts.block_cache = rocksdb.LRUCache(1 * (1024 ** 3))  # 1GB
+    #opts.block_cache_compressed = rocksdb.LRUCache(256 * (1024 ** 2))  # 256MB
     opts.disable_data_sync = bulk
 
     db = rocksdb.DB(dbfile, opts)
@@ -38,10 +37,8 @@ def add_urlmap(db, urlmap):
 
 
 def db_init():
-    db = open(create=True)
+    db = db_open(create=True)
     date_min = tweet_archive_min_date(ARCHIVEDIR)
-    print(date_min)
-    date_min = datetime.combine(date_min, datetime.min.time())  # midnight
     date_max = date.today()
 
     batch_interval = timedelta(days=FETCH_DAYS_BEFORE)
@@ -49,8 +46,14 @@ def db_init():
     date_fetch_end = date_min
 
     while date_fetch_start < date_max:
+        print('fetching between %s and %s' % (date_fetch_start.str(),
+                                              date_fetch_end.str()))
+
         urlmap = er_get_urls(date_fetch_start, date_fetch_end)
+        print('adding')
         add_urlmap(db, urlmap)
+        date_fetch_start = date_fetch_end
+        date_fetch_end = date_fetch_end + batch_interval
 
 
 def main():
@@ -61,3 +64,6 @@ def main():
         db_init()
 
     db = db_open()
+
+if __name__ == '__main__':
+    main()

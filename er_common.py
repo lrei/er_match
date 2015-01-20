@@ -1,7 +1,7 @@
 from EventRegistry import EventRegistry, QueryArticles, RequestArticlesInfo
 from EventRegistry import createStructFromDict
 from datetime import date
-from er_common import url_fix
+from tweet_common import url_fix
 
 
 def er_get_urls(start=date(2014, 4, 16), end=date(2014, 4, 16)):
@@ -35,7 +35,8 @@ def er_get_urls(start=date(2014, 4, 16), end=date(2014, 4, 16)):
 
         # add to dict of URI -> Event
         for article in obj.articles.results:
-            urlmap[url_fix(article.uri)] = article.eventUri
+            if hasattr(article, 'eventUri'):
+                urlmap[url_fix(article.uri)] = article.eventUri
 
         page += 1
 
