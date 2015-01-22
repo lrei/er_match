@@ -2,11 +2,12 @@ import kyotocabinet as kc
 from datetime import date, timedelta
 from tweet_common import tweet_archive_min_date
 from er_common import er_get_urls
+from match import match_tweet_archive
 
 
 DBFILENAME = 'er.db.kch'
 ARCHIVEDIR = '../tweets'
-FETCH_DAYS_BEFORE = 1
+FETCH_DAYS_BEFORE = 3
 
 
 def db_open(dbfile=DBFILENAME, create=False, bulk=False):
@@ -21,6 +22,8 @@ def db_open(dbfile=DBFILENAME, create=False, bulk=False):
     elif not db.open(dbfile, kc.DB.OWRITER):
         print("Failed to open")
         return None
+    else:
+        print('created')
 
     return db
 
@@ -32,8 +35,8 @@ def add_urlmap(db, urlmap):
         db.add(key, value)
 
 
-def db_init():
-    db = db_open(create=True)
+def db_init(archive_dir=ARCHIVEDIR, er_db_filename=DBFILENAME):
+    db = db_open(er_db_filename, create=True)
     date_min = tweet_archive_min_date(ARCHIVEDIR)
     date_max = date.today()
 
@@ -51,6 +54,9 @@ def db_init():
         print('done')
         date_fetch_start = date_fetch_end
         date_fetch_end = date_fetch_end + batch_interval
+
+    print('Match tweets')
+    match_tweet_archive(archive_dir, er_db_filename)
 
 
 def run_service(db):
