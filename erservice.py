@@ -116,8 +116,7 @@ def append_list_map(db, listmap):
 
 
 def run_service(urldb, datedb, endb):
-    while True:
-        urlmap, artmap, datemap = er_get_latest(lang='eng')
+    for urlmap, artmap, datemap in er_get_latest(lang='eng'):
         add_map(urldb, urlmap)
         add_map(endb, artmap)
         append_list_map(datedb, datemap)
