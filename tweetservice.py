@@ -57,8 +57,9 @@ def db_load_tweets(tweetdb, filepath):
 
 def db_load_archives(tweetdb, archives, archive_dir=ARCHIVE_DIR):
     for archive_name in archives:
+        print('Loading %s' % (archive_name,))
         # file path from name
-        archive_file = os.join(archive_dir, archive_name)
+        archive_file = os.path.join(archive_dir, archive_name)
         # load file
         db_load_tweets(tweetdb, archive_file)
         # mark file as loaded
@@ -80,8 +81,11 @@ def run_service(tweetdb, archive_dir=ARCHIVE_DIR):
         # Check for new archive files
         archives = archive_list(archive_dir)
         archives = archive_is_new(tweetdb, archives)
-        # Add new files
-        db_load_archives(tweetdb, archives, archive_dir)
+        if len(archives) != 0:
+            # Add new files
+            db_load_archives(tweetdb, archives, archive_dir)
+        else:
+            print('No new files')
         # Sleep
         time.sleep(ARCHIVE_LOAD_INTERVAL)
 

@@ -83,14 +83,16 @@ def dbs_init(urldb_filename=ER_URL_DB_FILENAME,
         add_map(urldb, urlmap)
         print('\tdone url map')
 
-        print('\tadd date map')
-        add_list(date_fetch.isoformat(), event_ids)
+        n_events = len(event_ids)
+        print('\tadd date map - %d events' % (n_events,))
+        add_list(datedb, date_fetch.isoformat(), event_ids)
         print('\tdone date map')
 
         print('\tfetching article map: english')
         artmap = er_get_events_article(event_ids, lang='eng')
 
-        print('\tadding article map: english')
+        n_centroids = len(artmap.keys())
+        print('\tadding article map: english - %d events' % (n_centroids, ))
         add_map(endb, artmap)
 
     print('init done')
