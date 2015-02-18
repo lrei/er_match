@@ -8,7 +8,7 @@ from EventRegistry import RequestEventArticleUris, createStructFromDict
 from datetime import date
 
 from tweet_common import url_fix
-from ermcfg import SOCKET_TIMEOUT, REQUEST_SLEEP, ER_LOG
+from ermcfg import SOCKET_TIMEOUT, REQUEST_SLEEP, ER_LOG, ER_USER, ER_PASS
 from ermcfg import ARTICLES_BATCH_SIZE, EVENTS_BATCH_SIZE
 
 
@@ -21,6 +21,7 @@ def er_get_urls(start=date(2014, 4, 16), end=date(2014, 4, 16)):
 
     socket.setdefaulttimeout(SOCKET_TIMEOUT)
     er = EventRegistry(host="http://eventregistry.org", logging=ER_LOG)
+    er.login(ER_USER, ER_PASS)
 
     page = 0
     urlmap = dict()
@@ -69,6 +70,7 @@ def er_get_urls_for_day(day=date(2014, 4, 16)):
 
     socket.setdefaulttimeout(SOCKET_TIMEOUT)
     er = EventRegistry(host="http://eventregistry.org", logging=ER_LOG)
+    er.login(ER_USER, ER_PASS)
 
     page = 0
     urlmap = dict()
@@ -115,6 +117,7 @@ def er_get_events_article(event_ids, lang='eng'):
 
     socket.setdefaulttimeout(SOCKET_TIMEOUT)
     er = EventRegistry(host="http://eventregistry.org", logging=ER_LOG)
+    er.login(ER_USER, ER_PASS)
 
     artmap = dict()
     batch_size = ARTICLES_BATCH_SIZE
@@ -134,6 +137,10 @@ def er_get_events_article(event_ids, lang='eng'):
                 time.sleep(REQUEST_SLEEP)
                 continue  # retry
 
+            # Check if the response from the server was an error message
+            if u'error' in res:
+                raise ValueError('EventRegistry API Return Error')
+
             events = res.keys()
             if len(events) == 0:
                 break
@@ -141,7 +148,6 @@ def er_get_events_article(event_ids, lang='eng'):
             for eventid in events:
                 info = res[eventid]['articles']['results']
                 if len(info) == 0:
-                    print('Event has no centroid %s' % (eventid,))
                     continue
 
                 info = info[0]
@@ -160,6 +166,7 @@ def er_get_events_urls(event_ids, lang='eng'):
 
     socket.setdefaulttimeout(SOCKET_TIMEOUT)
     er = EventRegistry(host="http://eventregistry.org", logging=ER_LOG)
+    er.login(ER_USER, ER_PASS)
 
     urlmap = dict()
     batch_size = EVENTS_BATCH_SIZE
@@ -201,6 +208,7 @@ def er_get_latest(lang='eng'):
     '''
     lastActivityId = 0
     er = EventRegistry(host="http://eventregistry.org", logging=ER_LOG)
+    er.login(ER_USER, ER_PASS)
 
     while True:
         # get events that have recently changed

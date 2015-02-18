@@ -6,6 +6,9 @@ from datetime import date
 
 
 ## ER SERVICE
+# Credentials
+ER_USER = 'luis.rei@ijs.si'
+ER_PASS = ''
 # Log ER Requests?
 ER_LOG = False
 # Database file that stores event registry url-eventid map (Hash)
