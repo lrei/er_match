@@ -26,8 +26,10 @@ SOCKET_TIMEOUT = 120.0
 # Wait time between requests after a timneout
 REQUEST_SLEEP = 60
 # Number of events-articles to fetch per request
-ARTICLES_BATCH_SIZE = 20
-#
+ARTICLES_BATCH_SIZE = 101    # -1 effectively?
+# Number of URLs to request per Page
+URLS_PER_PAGE = 200     # this is the maximum set by the server
+# Number of Events to ask for the URL in online mode
 EVENTS_BATCH_SIZE = 20
 
 ## TWEET SERVICE

@@ -1,5 +1,5 @@
-import kyotocabinet as kc
 import datetime
+import kyotocabinet as kc
 
 from er_common import er_get_urls_for_day, er_get_events_article, er_get_latest
 
@@ -72,18 +72,19 @@ def dbs_init(urldb_filename=ER_URL_DB_FILENAME,
         print('fetching for %s' % (str(date_fetch),))
         urlmap = er_get_urls_for_day(date_fetch)
         event_ids = urlmap.values()
+        n_events = len(event_ids)
+        print('fetched %d events with urls' % (n_events,))
 
         # increment date, handle day change, check for empty day (possible?)
         date_fetch = date_fetch + one_day
         date_max = datetime.datetime.today()
-        if(len(event_ids) == 0):
+        if(n_events == 0):
             continue
 
         print('\tadd url map')
         add_map(urldb, urlmap)
         print('\tdone url map')
 
-        n_events = len(event_ids)
         print('\tadd date map - %d events' % (n_events,))
         add_list(datedb, date_fetch.isoformat(), event_ids)
         print('\tdone date map')
