@@ -2,14 +2,17 @@ import sys
 import time
 import socket
 import json
+
 from EventRegistry import EventRegistry, QueryArticles, RequestArticlesInfo
 from EventRegistry import QueryEvent, RequestEventArticles
+from EventRegistry import RequestArticlesIdList
 from EventRegistry import RequestEventArticleUris, createStructFromDict
 from datetime import date
 
 from tweet_common import url_fix
 from ermcfg import SOCKET_TIMEOUT, REQUEST_SLEEP, ER_LOG, ER_USER, ER_PASS
 from ermcfg import ARTICLES_BATCH_SIZE, EVENTS_BATCH_SIZE, URLS_PER_PAGE
+from ermcfg import ER_WAIT_BETWEEN_REQUESTS
 
 
 """ Deprecated
@@ -66,6 +69,37 @@ def er_get_urls(start=date(2014, 4, 16), end=date(2014, 4, 16)):
 """
 
 
+def er_execute_query(er, q, n_retries=1000, wait=REQUEST_SLEEP,
+                     wait_before=ER_WAIT_BETWEEN_REQUESTS):
+    '''Makes the query to ER, handles timeouts, retries after a period and ER
+    API errors. Also waits be
+    '''
+
+    # Give ER time to breath between requests
+    if wait_before > 0:
+        time.sleep(wait_before)
+
+    counter = 0
+    while True:
+        try:
+            res = er.execQuery(q)
+            break
+        except socket.timeout:
+            e = sys.exc_info()[0]
+            print(e)
+            time.sleep(wait)
+            if counter > n_retries:
+                raise
+            counter += 1
+            # retry
+
+    # error handling
+    if u'error' in res:
+        raise ValueError('EventRegistry API Return Error' + res['error'])
+
+    return res
+
+
 def er_get_urls_for_day(day=date(2014, 4, 16), lang='eng'):
     '''Get ER article URIs between a given day
 
@@ -81,31 +115,32 @@ def er_get_urls_for_day(day=date(2014, 4, 16), lang='eng'):
     total_urls = 0
     urlmap = dict()
 
+    # setup query
+    q = QueryArticles(lang=lang)
+    q.setDateLimit(day, day)
+    # request article id list
+    q.addRequestedResult(RequestArticlesIdList())
+
+    # make query
     print('Fetching URLs for day %s' % (str(day),))
-    while True:
+    res = er_execute_query(er, q)
+
+    articleIds = res["articleIds"]
+
+    for articleId in range(0, len(articleIds), URLS_PER_PAGE):
         # setup query
-        q = QueryArticles(lang=lang)
-        q.setDateLimit(day, day)
+        chunk = articleIds[articleId:articleId + URLS_PER_PAGE]
+        q = QueryArticles()
+        q.setArticleIdList(chunk)
         q.addRequestedResult(RequestArticlesInfo(includeBody=False,
                                                  includeTitle=False,
                                                  includeBasicInfo=False,
                                                  includeSourceInfo=False,
-                                                 count=URLS_PER_PAGE,
-                                                 page=page,
-                                                 body_len=-1))
+                                                 page=0, count=URLS_PER_PAGE))
         page_urls = 0
+
         # make query
-        try:
-            res = er.execQuery(q)
-        except socket.timeout:
-            e = sys.exc_info()[0]
-            print(e)
-            time.sleep(REQUEST_SLEEP)
-            continue  # retry
-
-        if u'error' in res:
-            raise ValueError('EventRegistry API Return Error' + res['error'])
-
+        res = er_execute_query(er, q)
         obj = createStructFromDict(res)
 
         # check if empty
@@ -119,7 +154,7 @@ def er_get_urls_for_day(day=date(2014, 4, 16), lang='eng'):
                 urlmap[url_fix(article.uri)] = article.eventUri
                 page_urls += 1
 
-        print('Fetched page %d: %d urls' % (page, page_urls))
+        #print('Fetched page %d: %d urls' % (page, page_urls))
         total_urls += page_urls
         page += 1
     # unreachable
@@ -151,18 +186,7 @@ def er_get_events_article(event_ids, lang='eng'):
         q = QueryEvent(batch_ids)
         q.addRequestedResult(RequestEventArticles(count=2,
                                                   lang=lang, bodyLen=-1))
-        try:
-            res = er.execQuery(q)
-        except socket.timeout:
-            e = sys.exc_info()[0]
-            print(e)
-            time.sleep(REQUEST_SLEEP)
-            continue  # retry #@TODO FIX
-
-        # Check if the response from the server was an error message
-        if u'error' in res:
-            raise ValueError('EventRegistry API Return Error: '
-                             + res['error'])
+        res = er_execute_query(er, q)
 
         events = res.keys()
         page_events = len(events)
@@ -179,8 +203,7 @@ def er_get_events_article(event_ids, lang='eng'):
             a = json.dumps({'body': info['body'], 'title': info['title']})
             artmap[eventid] = a
 
-            print('Fetched %d centroids / %d' % (page_centroids,
-                                                 page_events))
+            #print('Fetched %d centroids / %d' % (page_centroids, page_events))
 
     return artmap
 
@@ -209,18 +232,7 @@ def er_get_events_urls(event_ids, lang='eng'):
 
             q = QueryEvent(batch_ids)
             q.addRequestedResult(RequestEventArticleUris())
-
-            try:
-                res = er.execQuery(q)
-            except socket.timeout:
-                e = sys.exc_info()[0]
-                print(e)
-                time.sleep(REQUEST_SLEEP)
-                continue  # retry
-
-        # Check if the response from the server was an error message
-        if u'error' in res:
-            raise ValueError('EventRegistry API Return Error' + res['error'])
+            res = er_execute_query(er, q)
 
             events = res.keys()
             page_events = len(events)
@@ -281,11 +293,11 @@ def er_get_latest(lang='eng'):
             datemap = dict()
             info = eventsDict['recentActivity']['events']['eventInfo']
             for event_id in events:
-                date = info[event_id]['eventDate']
+                date = str(info[event_id]['eventDate'])
                 if date not in datemap:
-                    datemap[date] = [event_id]
+                    datemap[date] = [str(event_id)]
                 else:
-                    datemap[date].append(event_id)
+                    datemap[date].append(str(event_id))
 
             new_id = eventsDict['recentActivity']['events']['lastActivityId']
             # if ER rebooted you might get activity id that is smaller than

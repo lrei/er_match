@@ -5,7 +5,8 @@ Fetches tweets from archive directories and adds them to the tweetdatabase.
 import os
 import time
 import json
-import kyotocabinet as kc
+from ermdb import db_open, db_close, db_get, db_put, db_exists
+from ermdb import db_add_map
 from tweet_common import read_tweet_file
 from ermcfg import ARCHIVE_DIR, TWEET_DB_FILENAME, ARCHIVE_LOAD_INTERVAL
 
@@ -22,26 +23,7 @@ def archive_is_new(tweetdb, filelist):
     '''
     Returns new archive filenames in a given list
     '''
-    return [f for f in filelist if not tweetdb.get(f)]
-
-
-def db_open(dbfile=TWEET_DB_FILENAME, create=False):
-    '''
-    Opens the databe. If create=False, throws exeption if it does not exist
-    '''
-
-    db = kc.DB()
-    if create:
-        if not db.open(dbfile, kc.DB.OWRITER | kc.DB.OCREATE):
-            print("Failed to create")
-            return None
-    elif not db.open(dbfile, kc.DB.OWRITER):
-        print("Failed to open")
-        return None
-    else:
-        print('created')
-
-    return db
+    return [f for f in filelist if not db_get(tweetdb, f)]
 
 
 def db_load_tweets(tweetdb, filepath):
@@ -51,8 +33,8 @@ def db_load_tweets(tweetdb, filepath):
     '''
 
     tweets = read_tweet_file(filepath)
-    for tweet in tweets:
-        tweetdb.add(tweet['id_str'], json.dumps(tweet))
+    tweets = {tweet['id_str']: json.dumps(tweet) for tweet in tweets}
+    db_add_map(tweetdb, tweets)
 
 
 def db_load_archives(tweetdb, archives, archive_dir=ARCHIVE_DIR):
@@ -63,7 +45,7 @@ def db_load_archives(tweetdb, archives, archive_dir=ARCHIVE_DIR):
         # load file
         db_load_tweets(tweetdb, archive_file)
         # mark file as loaded
-        tweetdb.add(archive_name, 't')
+        db_put(tweetdb, archive_name, 't')
 
 
 def db_init(archive_dir=ARCHIVE_DIR, tweet_db_filename=TWEET_DB_FILENAME):
@@ -74,6 +56,7 @@ def db_init(archive_dir=ARCHIVE_DIR, tweet_db_filename=TWEET_DB_FILENAME):
 
     archives = archive_list(archive_dir)
     db_load_archives(db, archives)
+    db.reader_check()
 
 
 def run_service(tweetdb, archive_dir=ARCHIVE_DIR):
@@ -86,26 +69,27 @@ def run_service(tweetdb, archive_dir=ARCHIVE_DIR):
             db_load_archives(tweetdb, archives, archive_dir)
         else:
             print('No new files')
+
+        tweetdb.reader_check()
         # Sleep
         time.sleep(ARCHIVE_LOAD_INTERVAL)
 
 
 def main():
 
-    db = db_open()
-
-    if db is None:
+    if not db_exists(TWEET_DB_FILENAME):
         db_init()
-        db = db_open()
 
-    if db is None:
+    try:
+        db = db_open(TWEET_DB_FILENAME, create=False)
+    except:
         print("Failed to open db")
         return 0
 
     try:
         run_service(db)
     except:
-        db.close()
+        db_close(db)
 
 
 if __name__ == '__main__':
