@@ -138,7 +138,8 @@ def main():
 
     try:
         run_service(urldb, datedb, endb)
-    except:
+    finally:
+        print('Closing DBs')
         db_close([urldb, datedb, endb])
 
 

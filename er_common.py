@@ -180,7 +180,6 @@ def er_get_events_article(event_ids, lang='eng'):
     for ii in range(0, n_events, batch_size):
         batch_ids = event_ids[ii:ii + batch_size]
 
-        page_centroids = 0
         page_events = 0
 
         q = QueryEvent(batch_ids)
@@ -198,12 +197,9 @@ def er_get_events_article(event_ids, lang='eng'):
             if len(info) == 0:
                 continue
 
-            page_centroids += 1
             info = info[0]
             a = json.dumps({'body': info['body'], 'title': info['title']})
             artmap[eventid] = a
-
-            #print('Fetched %d centroids / %d' % (page_centroids, page_events))
 
     return artmap
 

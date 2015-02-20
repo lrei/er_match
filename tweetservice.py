@@ -33,11 +33,12 @@ def db_load_tweets(tweetdb, filepath):
     '''
 
     tweets = read_tweet_file(filepath)
-    tweets = {tweet['id_str']: json.dumps(tweet) for tweet in tweets}
+    tweets = {str(tweet['id_str']): json.dumps(tweet) for tweet in tweets}
     db_add_map(tweetdb, tweets)
 
 
 def db_load_archives(tweetdb, archives, archive_dir=ARCHIVE_DIR):
+    archives.sort()
     for archive_name in archives:
         print('Loading %s' % (archive_name,))
         # file path from name
@@ -46,6 +47,8 @@ def db_load_archives(tweetdb, archives, archive_dir=ARCHIVE_DIR):
         db_load_tweets(tweetdb, archive_file)
         # mark file as loaded
         db_put(tweetdb, archive_name, 't')
+        # @TODO remove this (fix for my work laptop)
+        time.sleep(0.2)
 
 
 def db_init(archive_dir=ARCHIVE_DIR, tweet_db_filename=TWEET_DB_FILENAME):
@@ -88,7 +91,8 @@ def main():
 
     try:
         run_service(db)
-    except:
+    finally:
+        print('Closing DBs')
         db_close(db)
 
 

@@ -2,6 +2,7 @@ import os
 import urlparse
 import zipfile
 import json
+import mmh3
 from datetime import datetime, date
 
 
@@ -60,12 +61,13 @@ def tweets_filter_with_urls(tweets):
 
 def tweets_remove_fields(tweets, allowed=[u'id_str', u'text', u'created_at']):
     '''Removes all non-allowed fields from tweet.
-       Adds a URL field with expanded_urls
+       Adds a URL field with hashed expanded_urls
     '''
 
     for tweet in tweets:
         tweet_urls = tweet['entities']['urls']
         tweet_urls = [x[u'expanded_url'] for x in tweet_urls]
+        tweet_urls = [mmh3.hash_bytes(x) for x in tweet_urls]
         tweet[u'urls'] = tweet_urls
 
         for key in tweet.keys():

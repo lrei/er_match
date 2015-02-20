@@ -7,7 +7,8 @@ from datetime import date
 
 # GLOBAL
 # Maximum size a database can grow to (should be a multiple of 10MB)
-MAX_DB_SIZE = 10485760 * 1000 * 100     # 10MB -> 10GB -> 1TB =
+MAX_DB_SIZE = 10485760 * 1000 * 100     # 10MB -> 10GB -> 1TB
+
 ## ER SERVICE
 # Credentials
 ER_USER = 'luis.rei@ijs.si'
@@ -18,10 +19,13 @@ ER_LOG = False
 ER_WAIT_BETWEEN_REQUESTS = 0.5
 # Database file that stores event registry url-eventid map
 ER_URL_DB_FILENAME = 'er.en.url.db'
+ER_URL_DB_FILENAME = '/media/rei/data/er_match/er.en.url.db'
 # Database file that stores date-eventid mappings
 ER_DATE_DB_FILENAME = 'er.en.date.db'
+ER_DATE_DB_FILENAME = '/media/rei/data/er_match/er.en.date.db'
 # Database file that stores eventid-centroid (english) mappings (Hash)
 ER_CENTROID_EN_DB_FILENAME = 'er.en.centroid.db'
+ER_CENTROID_EN_DB_FILENAME = '/media/rei/data/er_match/er.en.centroid.db'
 # Start fetching (archive mode) Event Registry Events from this date
 START_DATE = date(2015, 1, 1)
 # End fetching (archive mode) at date
@@ -42,10 +46,11 @@ EVENTS_BATCH_SIZE = 20
 
 ## TWEET SERVICE
 # Database that stores tweets and the archive files that have been read
-TWEET_DB_FILENAME = 'tweets.db.kch'
+TWEET_DB_FILENAME = 'tweets.db'
+TWEET_DB_FILENAME = '/media/rei/data/er_match/tweets.db'
 # The directory twitter observatories
 #ARCHIVE_DIR = '../tweets'
-ARCHIVE_DIR = '/home/rei/DATA/symphony/tweets/'
+ARCHIVE_DIR = '/media/rei/data/er_match/tweets/'
 # Determines how often an archive directory is checked (seconds)
 ARCHIVE_LOAD_INTERVAL = 60 * 2
 
