@@ -76,7 +76,7 @@ def er_execute_query(er, q, n_retries=1000, wait=REQUEST_SLEEP,
 
     # Give ER time to breath between requests
     if wait_before > 0:
-        print('Sleeping before request: %f' % (wait_before,))
+        #print('Sleeping before request: %f' % (wait_before,))
         time.sleep(wait_before)
 
     counter = 0
