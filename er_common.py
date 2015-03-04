@@ -5,8 +5,7 @@ import json
 
 from EventRegistry import EventRegistry, QueryArticles, RequestArticlesInfo
 from EventRegistry import QueryEvent, RequestEventArticles
-from EventRegistry import RequestArticlesIdList
-from EventRegistry import RequestEventArticleUris, createStructFromDict
+from EventRegistry import RequestArticlesIdList, RequestEventArticleUris
 from datetime import date
 
 from tweet_common import url_fix
@@ -77,6 +76,7 @@ def er_execute_query(er, q, n_retries=1000, wait=REQUEST_SLEEP,
 
     # Give ER time to breath between requests
     if wait_before > 0:
+        print('Sleeping before request: %f' % (wait_before,))
         time.sleep(wait_before)
 
     counter = 0
@@ -141,21 +141,22 @@ def er_get_urls_for_day(day=date(2014, 4, 16), lang='eng'):
 
         # make query
         res = er_execute_query(er, q)
-        obj = createStructFromDict(res)
+        articles = res['articles']['results']
 
         # check if empty
-        if len(obj.articles.results) == 0:
+        if len(articles) == 0:
             print('Fetched a total of %d urls', (total_urls,))
             return urlmap
 
         # add to dict of URI -> Event
-        for article in obj.articles.results:
-            if hasattr(article, 'eventUri'):
-                urlmap[url_fix(article.uri)] = article.eventUri
+        for article in articles:
+            if 'url' in article and 'eventUri' in article:
+                urlmap[url_fix(article['url'])] = article['eventUri']
                 page_urls += 1
 
-        #print('Fetched page %d: %d urls' % (page, page_urls))
+        print('Fetched page %d: %d urls' % (page, page_urls))
         total_urls += page_urls
+
         page += 1
     # unreachable
 

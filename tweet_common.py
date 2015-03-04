@@ -1,5 +1,4 @@
 import os
-import urlparse
 import zipfile
 import json
 import mmh3
@@ -7,9 +6,11 @@ from datetime import datetime, date
 
 
 def url_fix(url):
-    '''basic url normalization, removes query parameters'''
-    parts = urlparse.urlparse(url)
-    return parts.netloc + parts.path
+    '''disabled: basic url normalization, removes query parameters'''
+    #import urlparse
+    #parts = urlparse.urlparse(url)
+    #return parts.netloc + parts.path
+    return url
 
 
 def read_tweet_file(filepath):
