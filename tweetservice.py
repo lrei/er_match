@@ -7,8 +7,9 @@ import time
 import json
 from ermdb import db_open, db_close, db_get, db_put, db_exists
 from ermdb import db_add_map
-from tweet_common import read_tweet_file
+from tweet_common import read_tweet_file, tweets_remove_fields
 from ermcfg import ARCHIVE_DIR, TWEET_DB_FILENAME, ARCHIVE_LOAD_INTERVAL
+from ermcfg import ARCHIVE_DB_FILENAME
 
 
 def archive_list(archive_dir=ARCHIVE_DIR):
@@ -30,15 +31,19 @@ def db_load_tweets(tweetdb, filepath):
     '''
     Loads a zipfile containing a line-delimited json file of tweets and adds
     them to the tweet database
+    Removes useless fields and hashes the urls
     '''
 
     tweets = read_tweet_file(filepath)
+    tweets_remove_fields(tweets)
+
     tweets = {str(tweet['id_str']): json.dumps(tweet) for tweet in tweets}
     db_add_map(tweetdb, tweets)
 
 
-def db_load_archives(tweetdb, archives, archive_dir=ARCHIVE_DIR):
+def db_load_archives(tweetdb, archdb, archives, archive_dir=ARCHIVE_DIR):
     archives.sort()
+
     for archive_name in archives:
         print('Loading %s' % (archive_name,))
         # file path from name
@@ -46,27 +51,34 @@ def db_load_archives(tweetdb, archives, archive_dir=ARCHIVE_DIR):
         # load file
         db_load_tweets(tweetdb, archive_file)
         # mark file as loaded
-        db_put(tweetdb, archive_name, 't')
+        db_put(archdb, archive_name, 't')
         # @TODO remove this (fix for my work laptop)
-        time.sleep(0.2)
+        #time.sleep(0.2)
 
 
-def db_init(archive_dir=ARCHIVE_DIR, tweet_db_filename=TWEET_DB_FILENAME):
+def db_init(archive_dir=ARCHIVE_DIR, tweet_db_filename=TWEET_DB_FILENAME,
+            archive_db_filename=ARCHIVE_DB_FILENAME):
     '''
     Handles the creation and initial loading of tweets from the archive files
     '''
     db = db_open(tweet_db_filename, create=True)
+    archdb = db_open(archive_db_filename, create=True)
 
     archives = archive_list(archive_dir)
-    db_load_archives(db, archives)
+    db_load_archives(db, archdb, archives)
+
     db.reader_check()
+    archdb.reader_check()
+
+    db_close(db)
+    db_close(archdb)
 
 
-def run_service(tweetdb, archive_dir=ARCHIVE_DIR):
+def run_service(tweetdb, archdb, archive_dir=ARCHIVE_DIR):
     while True:
         # Check for new archive files
         archives = archive_list(archive_dir)
-        archives = archive_is_new(tweetdb, archives)
+        archives = archive_is_new(archdb, archives)
         if len(archives) != 0:
             # Add new files
             db_load_archives(tweetdb, archives, archive_dir)
@@ -74,6 +86,7 @@ def run_service(tweetdb, archive_dir=ARCHIVE_DIR):
             print('No new files')
 
         tweetdb.reader_check()
+        archdb.reader_check()
         # Sleep
         time.sleep(ARCHIVE_LOAD_INTERVAL)
 
@@ -85,15 +98,17 @@ def main():
 
     try:
         db = db_open(TWEET_DB_FILENAME, create=False)
+        archdb = db_open(ARCHIVE_DB_FILENAME, create=False)
     except:
         print("Failed to open db")
         return 0
 
     try:
-        run_service(db)
+        run_service(db, archdb)
     finally:
         print('Closing DBs')
         db_close(db)
+        db_close(archdb)
 
 
 if __name__ == '__main__':
