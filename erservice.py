@@ -9,7 +9,7 @@ from er_common import er_get_urls_for_day, er_get_events_article, er_get_latest
 
 from ermcfg import ER_URL_DB_FILENAME, ER_DATE_DB_FILENAME
 from ermcfg import START_DATE, END_DATE
-from ermcfg import ER_CENTROID_EN_DB_FILENAME
+from ermcfg import ER_CENTROID_EN_DB_FILENAME, ER_STATUS_DB_FILENAME
 
 
 def convert_urlmap(urlmap):
@@ -27,7 +27,8 @@ def convert_ids(idlist):
 def dbs_init(start_date=START_DATE,
              urldb_filename=ER_URL_DB_FILENAME,
              datedb_filename=ER_DATE_DB_FILENAME,
-             endb_filename=ER_CENTROID_EN_DB_FILENAME):
+             endb_filename=ER_CENTROID_EN_DB_FILENAME,
+             statusdb_filename=ER_STATUS_DB_FILENAME):
     '''
     Initializes all event databases
     '''
@@ -35,7 +36,8 @@ def dbs_init(start_date=START_DATE,
     urldb = db_open(urldb_filename, create=True)
     datedb = db_open(datedb_filename, create=True)
     endb = db_open(endb_filename, create=True)
-    if urldb is None or datedb is None or endb is None:
+    statusdb = db_open(statusdb_filename, create=True)
+    if urldb is None or datedb is None or endb is None or statusdb is None:
         return None
 
     # start and end fetch dates
@@ -44,6 +46,11 @@ def dbs_init(start_date=START_DATE,
     one_day = datetime.timedelta(days=1)
 
     while date_fetch <= date_max:
+        if db_get(statusdb, str(date_fetch)) is not None:
+            print('Skipping ER data for %s' % (str(date_fetch),))
+            date_fetch = date_fetch + one_day
+            continue
+
         print('Fetching ER data for %s' % (str(date_fetch),))
         urlmap = er_get_urls_for_day(date_fetch)
         event_ids = urlmap.values()
@@ -78,7 +85,8 @@ def dbs_init(start_date=START_DATE,
         db_add_list(datedb, date_fetch.isoformat(), event_ids)
 
         print('-done date map')
-        db_put(datedb, 'last_date', str(date_fetch))
+        # update status
+        db_put(statusdb, str(date_fetch), 't')
 
         print('-Finished fecthing ER data for %s' % (str(date_fetch), ))
         date_fetch = date_fetch + one_day
@@ -89,14 +97,22 @@ def dbs_init(start_date=START_DATE,
     db_close([urldb, datedb, endb])
 
 
-def run_service(urldb, datedb, endb):
+def run_service(urldb, datedb, endb, statusdb, today):
+    print('Running service')
+
+    today = datetime.date.now()
+
     for urlmap, artmap, datemap in er_get_latest(lang='eng'):
         db_add_map(urldb, convert_urlmap(urlmap))
         db_add_map(endb, convert_artmap(artmap))
         db_append_list_map(datedb, datemap)
 
-    db_put(datedb, 'last_date', str(datetime.date.now()))
-    db_check([urldb, datedb, endb])
+        # check end of day
+        if today != datetime.date.now():
+            db_put(statusdb, str(today), 't')
+            today = datetime.date.now()
+
+        db_check([urldb, datedb, endb, statusdb])
 
 
 def main():
@@ -104,7 +120,7 @@ def main():
                         ER_CENTROID_EN_DB_FILENAME])
 
     if not exists:
-        # Batch mode from scratch
+        # Batch mode
         dbs_init()
 
     exists = db_exists([ER_URL_DB_FILENAME, ER_DATE_DB_FILENAME,
@@ -116,31 +132,21 @@ def main():
     urldb = db_open(ER_URL_DB_FILENAME, create=False)
     datedb = db_open(ER_DATE_DB_FILENAME, create=False)
     endb = db_open(ER_CENTROID_EN_DB_FILENAME, create=False)
+    statusdb = db_open(ER_STATUS_DB_FILENAME, create=False)
 
     # Resume Batch Mode
     if 'resume' in sys.argv:
-        last_date_in_db = db_get(datedb, 'last_date')
-        if last_date_in_db is None:
-            raise ValueError('Invalid last date in database')
-        print('Resuming from %s' % (last_date_in_db, ))
-        # Convert to datetime.date, there is a better way to do this but f-it
-        date_vals = last_date_in_db.split('-')
-        date_vals = [int(x) for x in date_vals]
-        last_date_in_db = datetime.date(*date_vals)
-        # Move to next day
-        last_date_in_db += datetime.timedelta(days=1)
-        # Go
         try:
-            dbs_init(start_date=last_date_in_db)
+            dbs_init()
         except:
-            db_close([urldb, datedb, endb])
+            db_close([urldb, datedb, endb, statusdb])
             raise
 
     try:
-        run_service(urldb, datedb, endb)
+        run_service(urldb, datedb, endb, statusdb)
     finally:
         print('Closing DBs')
-        db_close([urldb, datedb, endb])
+        db_close([urldb, datedb, endb, statusdb])
 
 
 if __name__ == '__main__':

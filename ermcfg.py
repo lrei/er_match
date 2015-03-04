@@ -28,8 +28,11 @@ ER_DATE_DB_FILENAME = '/media/rei/data/er_match/er.en.date.db'
 ER_CENTROID_EN_DB_FILENAME = 'er.en.centroid.db'
 ER_CENTROID_EN_DB_FILENAME = '/media/rei/data/er_match/er.en.centroid.db'
 ER_CENTROID_EN_DB_FILENAME = '/media/storage/DATA/symphony/er_match/er.en.centroid.db'
+# Database that stores the days that have been fetched
+ER_STATUS_DB_FILENAME = 'er.status.db'
+ER_STATUS_DB_FILENAME = '/media/rei/data/er_match/er.status.db'
 # Start fetching (archive mode) Event Registry Events from this date
-START_DATE = date(2015, 1, 1)
+START_DATE = date(2014, 11, 1)
 # End fetching (archive mode) at date
 #END_DATETIME = datetime.date.today()
 END_DATE = date(2015, 1, 31)
@@ -42,9 +45,9 @@ REQUEST_SLEEP = 60
 # Number of events-articles to fetch per request
 ARTICLES_BATCH_SIZE = 200
 # Number of URLs to request per Page
-URLS_PER_PAGE = 200     # this is the maximum set by the server
+URLS_PER_PAGE = 200     # 200 should be the maximum set by the server
 # Number of Events to ask for the URL in online mode
-EVENTS_BATCH_SIZE = 20
+EVENTS_BATCH_SIZE = 40
 
 ## TWEET SERVICE
 # Database that stores tweets and the archive files that have been read
