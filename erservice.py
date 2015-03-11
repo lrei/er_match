@@ -13,7 +13,18 @@ from ermcfg import ER_CENTROID_EN_DB_FILENAME, ER_STATUS_DB_FILENAME
 
 
 def convert_urlmap(urlmap):
-        return {mmh3.hash_bytes(x): str(urlmap[x]) for x in urlmap}
+    hashed_map = {}
+    for url in urlmap:
+        try:
+            hashed_url = mmh3.hash_bytes(url)
+        except:
+            # discard url
+            print('Bad URL')
+            continue
+        hashed_url = hashed_url.encode('string-escape')
+        hashed_map[hashed_url] = urlmap[url]
+
+    return hashed_map
 
 
 def convert_artmap(artmap):
