@@ -62,13 +62,20 @@ def tweets_filter_with_urls(tweets):
 
 def tweets_remove_fields(tweets, allowed=[u'id_str', u'text', u'created_at']):
     '''Removes all non-allowed fields from tweet.
-       Adds a URL field with hashed expanded_urls
+       Adds a URL field with fixed, hashed and string-escaped expanded_urls
     '''
 
     for tweet in tweets:
         tweet_urls = tweet['entities']['urls']
         tweet_urls = [x[u'expanded_url'] for x in tweet_urls]
-        tweet_urls = [mmh3.hash_bytes(x) for x in tweet_urls]
+        tweet_urls = [url_fix(x) for x in tweet_urls]
+        try:
+            tweet_urls = [mmh3.hash_bytes(x) for x in tweet_urls]
+        except:
+            # discard url
+            print('bad url (non-ascii) - urls for tweet discarded')
+            tweet_urls = []
+        tweet_urls = [x.encode('string-escape') for x in tweet_urls]
         tweet[u'urls'] = tweet_urls
 
         for key in tweet.keys():
