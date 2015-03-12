@@ -21,8 +21,12 @@ def convert_urlmap(urlmap):
             # discard url
             print('Bad URL')
             continue
-        hashed_url = hashed_url.encode('string-escape')
-        hashed_map[hashed_url] = urlmap[url]
+        try:
+            hashed_url = hashed_url.encode('string-escape')
+            hashed_map[hashed_url] = str(urlmap[url])
+        except:
+            print('Bad Something')
+            continue
 
     return hashed_map
 
@@ -74,8 +78,8 @@ def dbs_init(start_date=START_DATE,
             continue
 
         # Hash and convert to string
-        print('-add url map')
         urlmap = convert_urlmap(urlmap)
+        print('-add url map %d urls %d events' % (len(urlmap), set(len(urlmap.values()))))
         db_add_map(urldb, urlmap)
         print('-done url map')
 
@@ -108,7 +112,7 @@ def dbs_init(start_date=START_DATE,
     db_close([urldb, datedb, endb])
 
 
-def run_service(urldb, datedb, endb, statusdb, today):
+def run_service(urldb, datedb, endb, statusdb):
     print('Running service')
 
     today = datetime.date.now()
