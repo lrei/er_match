@@ -79,7 +79,7 @@ def dbs_init(start_date=START_DATE,
 
         # Hash and convert to string
         urlmap = convert_urlmap(urlmap)
-        print('-add url map %d urls %d events' % (len(urlmap), set(len(urlmap.values()))))
+        print('-add url map %d urls %d events' % (len(urlmap), len(set(urlmap.values()))))
         db_add_map(urldb, urlmap)
         print('-done url map')
 
