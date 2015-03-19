@@ -66,24 +66,29 @@ def dbs_init(start_date=START_DATE,
             date_fetch = date_fetch + one_day
             continue
 
+        #
+        # Get URL -> EventId map
+        #
         print('Fetching ER data for %s' % (str(date_fetch),))
         urlmap = er_get_urls_for_day(date_fetch)
         event_ids = urlmap.values()
-        n_events = len(event_ids)
-        print('-fetched %d events with urls' % (n_events,))
 
         # check for empty day (possible?)
+        n_events = len(event_ids)
         if(n_events == 0):
             date_fetch = date_fetch + one_day
-            continue
 
         # Hash and convert to string
         urlmap = convert_urlmap(urlmap)
-        print('-add url map %d urls %d events' % (len(urlmap), set(len(urlmap.values()))))
+        print('-add url map %d urls %d events' % (len(urlmap),
+                                                  set(len(urlmap.values()))))
+        # Add URL->Event to DB
         db_add_map(urldb, urlmap)
         print('-done url map')
 
+        #
         # Get Event->Article map
+        #
         print('-fetching article map: english')
         artmap = er_get_events_article(event_ids, lang='eng')
 
@@ -94,15 +99,21 @@ def dbs_init(start_date=START_DATE,
             artmap = convert_artmap(artmap)
             db_add_map(endb, artmap)
 
+        #
         # List of Date -> EventIds
+        #
         print('-add date map - %d events' % (n_events,))
         event_ids = convert_ids(event_ids)
         db_add_list(datedb, date_fetch.isoformat(), event_ids)
 
         print('-done date map')
-        # update status
+
+        #
+        # Update status
+        #
         db_put(statusdb, str(date_fetch), 't')
 
+        # Go to next day
         print('-Finished fecthing ER data for %s' % (str(date_fetch), ))
         date_fetch = date_fetch + one_day
 
