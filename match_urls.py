@@ -8,7 +8,10 @@ from ermcfg import TWEET_DB_FILENAME, MATCH_URL_DB_FILENAME, ER_URL_DB_FILENAME
 
 
 def match_url_tweet(url_db, tweet_json_str):
-    tweet = json.loads(tweet_json_str)
+    try:
+        tweet = json.loads(tweet_json_str)
+    except:
+        return None
 
     # discard tweets without urls
     if 'urls' not in tweet:
@@ -17,8 +20,7 @@ def match_url_tweet(url_db, tweet_json_str):
         return None
 
     # try to match urls
-    for url in tweet['urls']:
-        hashed_url = url.decode('string-escape')
+    for hashed_url in tweet['urls']:
         event_id = db_get(url_db, hashed_url)
         if event_id is not None:
             return event_id
@@ -53,7 +55,7 @@ def match_urls_in_tweetdb(tweet_db_filename=TWEET_DB_FILENAME,
         for tweet_id, value in cursor:
             s_tweets += 1
 
-            event_id = match_url_tweet(value)
+            event_id = match_url_tweet(url_db, value)
 
             # if match found, write to db
             if event_id is not None:

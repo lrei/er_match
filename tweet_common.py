@@ -20,7 +20,10 @@ def read_tweet_file(filepath):
     with zipfile.ZipFile(filepath, 'r') as zf:
         name = zf.namelist()[0]
         for line in zf.open(name):
-            tweet_json = json.loads(line)
+            try:
+                tweet_json = json.loads(line)
+            except:
+                continue
             tweets.append(tweet_json)
     return tweets
 

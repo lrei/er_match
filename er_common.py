@@ -14,60 +14,6 @@ from ermcfg import ARTICLES_BATCH_SIZE, EVENTS_BATCH_SIZE, URLS_PER_PAGE
 from ermcfg import ER_WAIT_BETWEEN_REQUESTS
 
 
-""" Deprecated
-def er_get_urls(start=date(2014, 4, 16), end=date(2014, 4, 16)):
-    '''Get ER article URIs between a given interval of time.
-
-    Returns:
-        A dictionary of URL -> EventId (EventUri)
-    '''
-
-    socket.setdefaulttimeout(SOCKET_TIMEOUT)
-    er = EventRegistry(host="http://eventregistry.org", logging=ER_LOG)
-    er.login(ER_USER, ER_PASS)
-
-    page = 0
-    urlmap = dict()
-
-    while True:
-        # setup query
-        q = QueryArticles()
-        q.setDateLimit(start, end)
-        q.addRequestedResult(RequestArticlesInfo(includeBody=False,
-                                                 includeTitle=False,
-                                                 includeBasicInfo=False,
-                                                 includeSourceInfo=False,
-                                                 count=100, page=page))
-        # make query
-        try:
-            res = er.execQuery(q)
-        except socket.timeout:
-            e = sys.exc_info()[0]
-            print(e)
-            time.sleep(REQUEST_SLEEP)
-            continue  # retry
-
-        if u'error' in res:
-            raise ValueError('EventRegistry API Return Error')
-
-        obj = createStructFromDict(res)
-
-        # check if empty
-        if len(obj.articles.results) == 0:
-            return urlmap
-
-        # add to dict of URI -> Event
-        for article in obj.articles.results:
-            if hasattr(article, 'eventUri'):
-                urlmap[url_fix(article.uri)] = article.eventUri
-
-        page += 1
-
-    # unreachable
-    return urlmap
-"""
-
-
 def er_execute_query(er, q, n_retries=1000, wait=REQUEST_SLEEP,
                      wait_before=ER_WAIT_BETWEEN_REQUESTS):
     '''Makes the query to ER, handles timeouts, retries after a period and ER

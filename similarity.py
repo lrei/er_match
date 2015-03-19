@@ -52,3 +52,47 @@ def page_sim(page_set, tweet_set):
     i = len(page_set.intersection(tweet_set))
 
     return i * math.log(n + 1)
+
+
+def overlap_coefficient(set_1, set_2):
+    '''Compute Overlap Coefficient'''
+    # handle lists and other set-convertible objects
+    if not isinstance(set_1, set):
+        set_1 = set(set_1)
+    if not isinstance(set_2, set):
+        set_2 = set(set_2)
+
+    min_len = min([len(set_1), len(set_2)])
+    if min_len == 0:
+        return 0
+
+    # calculate and return
+    return len(set_1.intersection(set_2)) / min_len
+
+
+def weighted_cosine_sim(weights, set_1, set_2, replace_zeros=True,
+                        replace=None):
+    # handle lists and other set-convertible objects
+    if not isinstance(set_1, set):
+        set_1 = set(set_1)
+    if not isinstance(set_2, set):
+        set_2 = set(set_2)
+
+    intersection = set_1 & set_2
+
+    if not replace_zeros:
+        weighted = [weights[x] ** 2 for x in intersection]
+    else:
+        weighted = [weights[x] ** 2 if x in weights else weights[replace] ** 2
+                    for x in intersection]
+
+    numerator = sum(weighted)
+
+    sum1 = sum([weights[x] ** 2 for x in set_1])
+    sum2 = sum([weights[x] ** 2 for x in set_2])
+    denominator = math.sqrt(sum1) * math.sqrt(sum2)
+
+    if not denominator:
+        return 0.0
+    else:
+        return float(numerator) / denominator
