@@ -50,7 +50,7 @@ def db_load_archives(tweetdb, archdb, archives, archive_dir=ARCHIVE_DIR):
         # file path from name
         archive_file = os.path.join(archive_dir, archive_name)
         # load file
-        tweets = db_load_tweets(tweetdb, archive_file)
+        tweets = db_load_tweets(archive_file)
         db_add_map(tweetdb, tweets)
         # mark file as loaded
         db_put(archdb, archive_name, 't')
