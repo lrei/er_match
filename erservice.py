@@ -80,9 +80,8 @@ def dbs_init(start_date=START_DATE,
 
         # Hash and convert to string
         urlmap = convert_urlmap(urlmap)
-        print('-add url map %d urls %d events' % (len(urlmap),
-                                                  set(len(urlmap.values()))))
         # Add URL->Event to DB
+        print('-add url map %d urls %d events' % (len(urlmap), len(set(urlmap.values()))))
         db_add_map(urldb, urlmap)
         print('-done url map')
 
@@ -136,7 +135,7 @@ def run_service(urldb, datedb, endb, statusdb):
         # check end of day
         if today != datetime.date.now():
             db_put(statusdb, str(today), 't')
-            today = datetime.date.now()
+            today = http://stackoverflow.com/questions/28074503/python-reading-chunks-and-break-if-there-is-no-linesdatetime.date.now()
 
         db_check([urldb, datedb, endb, statusdb])
 
